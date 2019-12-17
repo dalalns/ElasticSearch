@@ -1,0 +1,1 @@
+curl -POST http://localhost:9200/company/employee -curl -H 'Content-Type:application/json' -d '{"name":"navin"}'

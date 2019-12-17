@@ -1,1 +1,14 @@
+#Here company is index of type employe,the below query will define a record with any id type random
 curl -POST http://localhost:9200/company/employee -curl -H 'Content-Type:application/json' -d '{"name":"navin"}'
+
+#To define a ID we need to write below query
+curl -POST http://localhost:9200/company/employee/1 -curl -H 'Content-Type:application/json' -d '{"name":"Prince Misra"}'
+
+#To Retrive the records we use GET command
+curl GET http://localhost:9200/company/employee/1
+
+#To Search a record we use _search command
+curl GET http://localhost:9200/company/employee/_search?q="navin"
+
+
+

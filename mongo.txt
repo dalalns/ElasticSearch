@@ -4,11 +4,26 @@ curl -POST http://localhost:9200/company/employee -curl -H 'Content-Type:applica
 #To define a ID we need to write below query
 curl -POST http://localhost:9200/company/employee/1 -curl -H 'Content-Type:application/json' -d '{"name":"Prince Misra"}'
 
+curl -POST http://localhost:9200/company/employee/2 -curl -H 'Content-Type:application/json' -d '{"firstname":"anju","name":"dalal"}'
+
 #To Retrive the records we use GET command
-curl GET http://localhost:9200/company/employee/1
+curl -GET http://localhost:9200/company/employee/1
 
 #To Search a record we use _search command
-curl GET http://localhost:9200/company/employee/_search?q="navin"
+curl -GET http://localhost:9200/company/employee/_search?q="navin"
+
+
+#To Search a record we use _count command
+curl -GET http://localhost:9200/company/employee/_count?q="navin"
+
+#search all index in  local instance of elastic seach
+curl -POST http://localhost:9200/_search
+
+#search all records of company index
+curl -POST http://localhost:9200/company/_search
+
+#One way to update without using _update
+curl -POST http://localhost:9200/company/employee/1 -curl -H 'Content-Type:application/json' -d '{"name":"Prince Misra AI}'
 
 
 

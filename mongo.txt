@@ -12,8 +12,6 @@ curl -POST http://localhost:9200/company/employee/1 -curl -H 'Content-Type:appli
 curl -POST http://localhost:9200/company/employee/2 -curl -H 'Content-Type:application/json' -d '{"firstname":"anju","name":"dalal"}'
 
 #To Retrive the records we use GET command
-sudo systemctl enable elasticsearch.service
-sudo systemctl start elasticsearch.service
 curl -GET http://localhost:9200/company/employee/1
 
 #To Search a record we use _search command
@@ -131,9 +129,408 @@ curl -X POST "localhost:9200/blog/_analyze?pretty" -H 'Content-Type: application
   "text": "Hey man, how are you doing ? hey : navin ."
 }
 
+# to use lanugage analyzer such as engligh
 curl -X POST "localhost:9200/blog/_analyze?pretty" -H 'Content-Type: application/json' -d'
 {
   "analyzer": "english",
   "text": "Hey man, how are you doing ?"
 }
 
+#to use language analyzer such as dutch , elastic search supports many language analyzer and you can also bulit custom analyzer ,the below query returns all words as its engligh not dutch
+curl -X POST "localhost:9200/blog/_analyze?pretty" -H 'Content-Type: application/json' -d'
+{
+  "analyzer": "dutch",
+  "text": "Hey man, how are you doing ?"
+}
+
+#removers stopwords and returns dutch words,removes de and met
+curl -X POST "localhost:9200/blog/_analyze?pretty" -H 'Content-Type: application/json' -d'
+{
+  "analyzer": "dutch",
+  "text": "De koetsier poetst de postkoets met postkoetspoets"
+}
+
+#to filter records where range of guid is between 100 and 150
+curl -X POST "localhost:9200/blog/_search?pretty" -H 'Content-Type: application/json' -d'
+{                                                      
+"query":{"range":{"guid":{"gte":100,"lte":150}}}                                                                                                                                                            }                                                                           
+'
+#to find records in between a date range
+curl -X POST "localhost:9200/blog/_search?pretty" -H 'Content-Type: application/json' -d'
+{                                                      
+"query":{"range":{"date":{"gte":"2016-01-01","lte":"2016-02-01","format":"yyyy-mm-dd"}}}
+}                                                      
+'
+
+
+#Perform a wildcard search for blog posts published at 11:50 AM using the analyzed date field
+curl -X POST "localhost:9200/blog/_search?pretty" -H 'Content-Type: application/json' -d'
+{
+  "_source": "date",
+  "query": {
+    "wildcard": {
+      "date": {
+        "value": "*11:50*"
+      }
+    }
+  }
+}
+
+#wildcard search using date.keyword
+curl -X POST "localhost:9200/blog/_search?pretty" -H 'Content-Type: application/json' -d'
+{
+  "_source": "date",
+  "query": {
+    "wildcard": {
+      "date.keyword": {
+        "value": "*11:50*"
+      }
+    }
+  }
+}
+
+#Schemaless? Not really, ElasticSearch guesses and creates a schema for you
+curl -XGET http://localhost:9200/blog/_mapping/?pretty
+
+# in this case my local instance already has test index so when i am giving type is test it say index test already exists with type doc already exist
+curl -X POST "http://localhost:9200/_bulk?pretty" -H 'Content-Type: application/json' -d'
+{"index":{"_index":"test"}}
+{"guid": 2, "date": "2016-01-02"}
+{"index":{"_index":"test"}}
+{"guid": 10, "date": "2015-03-01"}
+{"index":{"_index":"test"}}
+{"guid": 20, "date": "2016-05-12"}
+{"index":{"_index":"test"}
+{"guid": 100,"date": "2016-01-12"}
+{"index":{"_index":"test"}}
+{"guid": 150, "date": "2016-03-01"}
+{"index":{"_index":"test"}}
+{"guid": 170, "date": "2015-12-12"}
+{"index":{"_index":"test"}}
+{"guid": 1500, "date": "2016-02-14"}
+{"index":{"_index":"test"}}
+{"guid": 1700, "date": "2015-11-11"}
+'
+
+
+curl -X POST "http://localhost:9200/test/_search?pretty" -H 'Content-Type: application/json' -d'
+{
+"query":{
+       "range":{
+              "guid":{
+                    "gte":100,"lte":150
+                    }
+              }
+        }
+}
+
+# get records in between dates
+curl -X POST "http://localhost:9200/test/_search?pretty" -H 'Content-Type: application/json' -d'
+{
+"query": {
+    "range": {
+      "date": {
+        "gte": "2016-01-01",
+        "lt": "2016-02-01"
+      }
+    }
+  }
+}
+
+# to see the index structure and mapping and data types
+curl -XGET http://localhost:9200/test/_mapping
+
+#To delete a index
+curl -X DELETE 'http://localhost:9200/test'
+
+#06 mappings.json starts returns acknoledge true if successfull
+curl -X DELETE 'http://localhost:9200/blog'
+
+# doubt in this as it did not executed in command line and was giving error
+curl -XPUT "http://localhost:9200/blog/?pretty" -H "Content-Type:application/json" -d'
+{
+  "mappings": {
+    "post": {
+      "properties": {
+        "title": {
+          "type": "text"
+        },
+        "date" : {
+          "type": "date",
+          "format": "E, dd MMM YYYY HH:mm:ss Z"
+        },
+        "author": {
+          "type": "keyword"
+        },        
+        "category": {
+          "type": "keyword"
+          
+        },
+        "guid": {
+          "type": "integer"
+        }
+      }
+    }
+  }
+}
+'
+
+#insert multiple records
+curl -X POST "http://localhost:9200/_bulk?pretty" -H 'Content-Type: application/json' -d'
+{"index":{"_index":"blog","_type":"post","_id":"6581"}}
+{"language":"en","title":"Combell won the Twinkle Award in the \u201cHosting & Domain\u201d category!","date":"Fri, 09 Dec 2016 09:30:27 +0000","author":"Combell","category":["Combell news","award","awards","Combell","twinkle"],"guid":"6581"}
+{"index":{"_index":"blog","_type":"post","_id":"6576"}}
+{"language":"en","title":"Combell revamps it\u2019s hosting range: fewer packages, more features!","date":"Thu, 08 Dec 2016 15:35:59 +0000","author":"Combell","category":["Combell news","Hosting","Combell","hosting"],"guid":"6576"}
+
+# search records
+curl -X POST "http://localhost:9200/blog/_search?pretty" -H 'Content-Type: application/json' -d'
+{"query":
+        {
+        "range":
+                {
+                "guid":{"gte":100,"lte":150}
+                }
+        }
+}
+
+# search records between 6150 and 6200
+curl -X POST "http://localhost:9200/blog/_search?pretty" -H 'Content-Type: application/json' -d'
+{
+  "query": {
+    "range": {
+      "guid": {
+        "gte": 6150,
+        "lte": 6200
+      }
+    }
+  }
+}
+'
+#Find blog posts written in January 2016, with correct schema
+curl -X POST "http://localhost:9200/blog/_search?pretty" -H 'Content-Type: application/json' -d'
+{
+  "query": {
+    "range": {
+      "date": {
+        "gte": "2015-01-01",
+        "lt": "2016-02-01",
+        "format": "yyyy-MM-dd"
+      }
+    }
+  }
+}
+'
+
+#8_mapping_non_analyzed.json
+curl -X DELETE 'http://localhost:9200/blog'
+
+# doubts in this as its giving error see #10 syntax
+curl -X PUT "localhost:9200/blog?pretty" -H 'Content-Type: application/json' -d'
+{"post": {
+  "mappings": {
+      "properties": {
+        "title": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            } 
+          }
+        },
+        "date" : {
+          "type": "date",
+          "format": "E, dd MMM YYYY HH:mm:ss Z"
+        },
+        "author": {
+          "type": "keyword"
+        },   
+        "language": {
+          "type": "keyword"
+        },             
+        "category": {
+          "type": "keyword"
+        },
+        "guid": {
+          "type": "integer"
+        }
+      }
+    }
+  }
+}
+#To insert bulk records from a local json
+curl -H 'Content-Type: application/x-ndjson' -XPOST 'localhost:9200/_bulk?pretty' --data-binary @/home/navin/test.json
+#count the records
+curl -XGET "http://localhost:9200/blog/_count?pretty"
+
+# queries and filters
+#Get mapping of blog index
+curl -XGET "http://localhost:9200/blog/_mapping/?pretty"
+
+# to find records which starts with a strin keyword
+curl -X POST "http://localhost:9200/blog/_search?pretty" -H 'Content-Type: application/json' -d'
+{
+  "query": {
+    "prefix": {
+      "title.keyword": "My Combell Power Tips:"
+    }
+  }
+}
+
+#Perform a prefix query in "filter context" on the non-analyzed values
+curl -X POST "http://localhost:9200/blog/_search?pretty" -H 'Content-Type: application/json' -d'
+{
+  "query": {
+    "bool": {
+      "filter": {
+        "prefix": {
+          "title.keyword": "My Combell Power Tips:"
+        }
+      }
+    }
+  }
+}
+
+#Execute a query on the title field which is analyzed
+curl -X POST "http://localhost:9200/blog/_search?pretty" -H 'Content-Type: application/json' -d'
+{
+  "query": {
+    "match": {
+      "title": "Tips:"
+    }
+  }
+}
+
+#Combined multiple filters in a boolean query (must => and, must_not => not, should => or)
+curl -X POST "http://localhost:9200/blog/_search?pretty" -H 'Content-Type: application/json' -d'
+{
+  "query": {
+    "bool": {
+      "filter": [
+        {
+          "bool": {
+            "must": [
+              {
+                "term": {
+                  "language": "en"
+                }
+              },
+              {
+                "range": {
+                  "date": {
+                    "gte": "2016-01-01",
+                    "format": "yyyy-MM-dd"
+                  }
+                }
+              }
+            ],
+            "must_not": [
+              {
+                "term": {
+                  "category": "joomla"
+                }
+              }
+            ],
+            "should": [
+              {
+                "term": {
+                  "category": "Hosting"
+                }
+              },
+              {
+                "term": {
+                  "category": "evangelist"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}
+          
+          
+#Combined multiple queries in a boolean query (must => and, must_not => not, should => or)
+#Should behave differently in query mode, than in filter mode
+curl -X POST "http://localhost:9200/blog/_search?pretty" -H 'Content-Type: application/json' -d'
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "term": {
+            "language": "en"
+          }
+        },
+        {
+          "range": {
+            "date": {
+              "gte": "2016-01-01",
+              "format": "yyyy-MM-dd"
+            }
+          }
+        }
+      ],
+      "must_not": [
+        {
+          "term": {
+            "category": "joomla"
+          }
+        }
+      ],
+      "should": [
+        {
+          "term": {
+            "category": "Hosting"
+          }
+        },
+        {
+          "term": {
+            "category": "evangelist"
+          }
+        }
+      ]
+    }
+  }
+}          
+
+#10_mapping_language_analyzed
+curl -X PUT "localhost:9200/blog?pretty" -H 'Content-Type: application/json' -d'
+{
+  "mappings": {
+    "properties": {
+        "title": {
+          "type": "text",
+          "fields": {
+            "nl": {
+              "type": "text",
+              "analyzer": "dutch"
+            },
+            "en": {
+              "type": "text",
+              "analyzer": "english"
+            },
+            "keyword": {
+              "type": "keyword"
+            }            
+          }
+        },
+        "date": {
+          "type": "date",
+          "format": "E, dd MMM YYYY HH:mm:ss Z"
+        },
+        "language": {
+          "type": "keyword"
+        },
+        "author": {
+          "type": "keyword"
+        },
+        "category": {
+          "type": "keyword"
+        },
+        "guid": {
+          "type": "integer"
+        }
+      }
+  }
+}

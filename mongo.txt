@@ -663,7 +663,9 @@ curl -X POST "http://localhost:9200/cities/city/_search?pretty" -H 'Content-Type
 # making cars indexes
 curl -H 'Content-Type: application/x-ndjson' -XPOST 'localhost:9200/cars/transaction/_bulk?pretty' --data-binary @/home/navin/cars.json
 
-curl -X POST "http://localhost:9200/cars/transaction/_search?pretty" -H 'Content-Type: application/json' -d'
+#aggregation queries
+#returns the doc_count of top 10 author
+curl -X POST "http://localhost:9200/blog/_search?pretty" -H 'Content-Type: application/json' -d'
 {
   "size": 0, 
   "aggs": {
@@ -676,3 +678,153 @@ curl -X POST "http://localhost:9200/cars/transaction/_search?pretty" -H 'Content
   }
 }
 
+#top 10 authors along with the languages they write in 
+curl -X POST "http://localhost:9200/blog/_search?pretty" -H 'Content-Type: application/json' -d'
+{
+  "size": 0, 
+  "aggs": {
+    "popular_bloggers": {
+      "terms": {
+        "field": "author",
+        "size": 10
+      },
+      "aggs": {
+        "used_languages": {
+          "terms": {
+            "field": "language",
+            "size": 10
+          }
+        }
+      }
+    }
+  }
+}
+
+
+#Number of blog posts written in Dutch per month,in 2016
+curl -X POST "http://localhost:9200/blog/_search?pretty" -H 'Content-Type: application/json' -d'
+{
+  "size":0,
+  "query": {
+    "bool": {
+      "filter": {
+        "bool": {
+          "must": [
+            {
+              "range": {
+                "date": {
+                  "gte": "2016-01-01",
+                  "lte": "2016-12-31",
+                  "format": "yyyy-MM-dd"
+                }
+              }
+            },
+            {
+              "term": {
+                "language": "nl"
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  "aggs": {
+    "number_of_posts_per_month_in_2016": {
+      "date_histogram": {
+        "field": "date",
+        "interval": "month",
+        "format": "MMMM"
+      }
+    }
+  }
+}
+
+#Top 3 popular cars
+curl -X POST "http://localhost:9200/cars/_search?pretty" -H 'Content-Type: application/json' -d'
+{
+  "size": 0, 
+  "aggs": {
+    "popular_cars": {
+      "terms": {
+        "field": "make.keyword",
+        "size": 3
+      }
+    }
+  }
+}
+
+
+#Average price for a car
+curl -X POST "http://localhost:9200/cars/_search?pretty" -H 'Content-Type: application/json' -d'
+{
+  "size": 0, 
+  "aggs": {
+    "average_price": {
+      "avg": {
+        "field": "price"
+      }
+    }
+  }
+}
+
+
+#extended statics about a car
+curl -X POST "http://localhost:9200/cars/_search?pretty" -H 'Content-Type: application/json' -d'
+{
+  "size": 0, 
+  "aggs": {
+    "price_statistics": {
+      "extended_stats": {
+        "field": "price"
+      }
+    }
+  }
+}
+
+
+#Total revenue for cars per price range, with an interval of 20000
+curl -X POST "http://localhost:9200/cars/_search?pretty" -H 'Content-Type: application/json' -d'
+{
+   "size": 0,
+   "aggs":{
+      "price":{
+         "histogram":{ 
+            "field": "price",
+            "interval": 20000
+         },
+         "aggs":{
+            "revenue": {
+               "sum": { 
+                 "field": "price"
+               }
+             }
+         }
+      }
+   }
+}
+
+#Average price of a Ford vs. the total average price of all cars
+curl -X POST "http://localhost:9200/cars/_search?pretty" -H 'Content-Type: application/json' -d'
+{
+    "size": 0,
+    "query": {
+        "match": {
+            "make": "ford"
+        }
+    },
+    "aggs": {
+        "single_avg_price": {
+            "avg": { "field": "price" }
+        },
+        "all": {
+            "global": {},
+            "aggs": {
+                "avg_price": {
+                    "avg": { "field": "price" }
+                }
+
+            }
+        }
+    }
+}

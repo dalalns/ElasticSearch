@@ -91,3 +91,49 @@ curl -X POST "localhost:9200/blog/_search?pretty" -H 'Content-Type: application/
 }
 '
 
+#Search for "vagrant" and "chef". The terms should be next to eachother
+curl -X POST "localhost:9200/blog/_search?pretty" -H 'Content-Type: application/json' -d'
+{
+  "query": {
+    "match_phrase": {
+      "title": {
+        "query": "vagrant chef",
+        "slop": 1
+      }
+    }
+  }
+}
+#Search for "vagrant" and "chef". The terms should be at most 2 positions apart
+curl -X POST "localhost:9200/blog/_search?pretty" -H 'Content-Type: application/json' -d'
+{
+  "query": {
+    "match_phrase": {
+      "title": {
+        "query": "vagrant chef",
+        "slop": 2
+      }
+    }
+  }
+}
+
+#analyze
+#standard removes ",",":","." and ? and returns tokenized words as token
+curl -X POST "localhost:9200/blog/_analyze?pretty" -H 'Content-Type: application/json' -d'
+{
+  "analyzer": "standard",
+  "text": "Hey man, how are you doing?hey : navin."
+}
+
+#analyzer whitespace, returns tokenized words based on whitespace
+curl -X POST "localhost:9200/blog/_analyze?pretty" -H 'Content-Type: application/json' -d'
+{
+  "analyzer": "whitespace",
+  "text": "Hey man, how are you doing ? hey : navin ."
+}
+
+curl -X POST "localhost:9200/blog/_analyze?pretty" -H 'Content-Type: application/json' -d'
+{
+  "analyzer": "english",
+  "text": "Hey man, how are you doing ?"
+}
+

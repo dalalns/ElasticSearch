@@ -1,3 +1,8 @@
+#To enable and start elasticsearch service
+sudo systemctl enable elasticsearch.service
+sudo systemctl start elasticsearch.service
+
+
 #Here company is index of type employe,the below query will define a record with any id type random
 curl -POST http://localhost:9200/company/employee -curl -H 'Content-Type:application/json' -d '{"name":"navin"}'
 
@@ -7,6 +12,8 @@ curl -POST http://localhost:9200/company/employee/1 -curl -H 'Content-Type:appli
 curl -POST http://localhost:9200/company/employee/2 -curl -H 'Content-Type:application/json' -d '{"firstname":"anju","name":"dalal"}'
 
 #To Retrive the records we use GET command
+sudo systemctl enable elasticsearch.service
+sudo systemctl start elasticsearch.service
 curl -GET http://localhost:9200/company/employee/1
 
 #To Search a record we use _search command
@@ -25,5 +32,62 @@ curl -POST http://localhost:9200/company/_search
 #One way to update without using _update
 curl -POST http://localhost:9200/company/employee/1 -curl -H 'Content-Type:application/json' -d '{"name":"Prince Misra AI}'
 
+# bulk insert using _bulk
 
+curl -X POST "localhost:9200/_bulk?pretty" -H 'Content-Type: application/json' -d'
+{"index":{"_index":"blog","_type":"post","_id":"6530"}}
+{"language":"en","title":"Want to become a Combell Reseller? 7 reasons to say yes!","date":"Wed, 17 Aug 2016 14:14:55 +0000","author":"Dorien Marinus","category":["Domain names","Hosting","News","Tools","control panel","features","reseller"],"guid":"6530"}
+{"index":{"_index":"blog","_type":"post","_id":"6462"}}
+{"language":"en","title":"Brute force attacks: how to protect yourself?","date":"Mon, 11 Jul 2016 09:30:43 +0000","author":"Christophe","category":["Datasecurity","Hosting","Tools","brute force","security","tips","wordpress"],"guid":"6462"}
+{"index":{"_index":"blog","_type":"post","_id":"6515"}}
+{"language":"en","title":"Combell welcomes Byte and HostingXS to the family!","date":"Thu, 07 Jul 2016 12:35:02 +0000","author":"Combell","category":["Combell news","Magento","News","Sector news","Acquisition","byte","hostingxs","Intelligent","shopware"],"guid":"6515"}
+'
+
+#to see all records which are inserted in blog index of type post 
+curl -GET http://localhost:9200/blog/post/_search?pretty
+
+#search title which contain "thijs"
+curl -X POST "localhost:9200/blog/_search?pretty" -H 'Content-Type: application/json' -d'
+ {
+   "query": {
+     "match": {
+       "title": "thijs"
+     }
+}
+}
+'
+
+# serach record with title contain "this" or "combell"
+curl -X POST "localhost:9200/blog/_search?pretty" -H 'Content-Type: application/json' -d'
+{
+  "query": {
+    "match": {
+      "title": "thijs combell"
+    }
+  }
+}
+'
+
+#Search for the terms "thijs" and "combell" in the "title" field
+curl -X POST "localhost:9200/blog/_search?pretty" -H 'Content-Type: application/json' -d'
+{
+  "query": {
+    "match": {
+      "title":{"query":"combell thisjs","operator":"and"}
+    }
+  }
+}
+'
+
+#Search for the term "vagrant thijs varnish". Results should match 67% (i.e. 2 out of 3) of words (clauses)
+#either two of the three words matches
+curl -X POST "localhost:9200/blog/_search?pretty" -H 'Content-Type: application/json' -d'
+{
+  "query": {
+    "match": {
+      "title":{"query":"vagrant thijs varnish","minimum_should_match": "67%"}
+    }
+  }
+}
+'
 
